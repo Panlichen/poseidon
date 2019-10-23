@@ -51,3 +51,8 @@ bazel-*
 
 # Version file for dockerized build
 .dockerized-kube-version-defs
+
+# local use
+tools/
+example/
+.vscode/
