@@ -56,3 +56,6 @@ bazel-*
 tools/
 example/
 .vscode/
+.env
+__pycache__/
+logs/

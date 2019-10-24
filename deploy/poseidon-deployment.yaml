@@ -147,13 +147,13 @@ spec:
     spec:
       serviceAccountName: poseidon
       containers:
-      - command: [/poseidon, --logtostderr, --kubeConfig=, --kubeVersion=1.6]
+      - command: [/poseidon, --logtostderr, --kubeConfig=, --kubeVersion=1.15, --firmamentAddress=10.0.0.252]
         image: huaweiposeidon/poseidon:latest
         name: poseidon
       initContainers:
       - name: init-firmamentservice
         image: radial/busyboxplus:curl
-        command: ['sh', '-c', 'until nslookup firmament-service.kube-system; do echo waiting for firmamentservice; sleep 1; done;']
+        command: ['sh', '-c', 'until curl 10.0.0.252:9090; do echo waiting for firmamentservice; sleep 1; done;']
         securityContext:
           privileged: false
         volumeMounts: []
