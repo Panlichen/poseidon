@@ -148,7 +148,7 @@ spec:
       serviceAccountName: poseidon
       containers:
       - command: [/poseidon, --logtostderr, --kubeConfig=, --kubeVersion=1.15, --firmamentAddress=10.0.0.252]
-        image: huaweiposeidon/poseidon:v0.8
+        image: huaweiposeidon/poseidon:latest
         name: poseidon
       initContainers:
       - name: init-firmamentservice

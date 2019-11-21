@@ -43,7 +43,7 @@ spec:
       serviceAccountName: heapster
       containers:
       - name: heapster
-        image: poanpan/heapster-poseidon:v1
+        image: shivramsrivastava/heapster-poseidon:latest
         command:
         - /heapster
         - --metric-resolution=0m10s
