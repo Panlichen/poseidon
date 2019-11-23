@@ -1,11 +1,3 @@
-from concurrent import futures
-import time
-import logging
-import random
-import os
-
-import grpc
-
 # import py_rl.py_firmament_grpc.affinity_pb2_grpc as affinity_pb2_grpc
 # import py_rl.py_firmament_grpc.affinity_pb2 as affinity_pb2
 # import py_rl.py_firmament_grpc.avoid_pods_annotation_pb2_grpc as avoid_pods_annotation_pb2_grpc
@@ -52,9 +44,16 @@ import py_rl.py_firmament_grpc.task_desc_pb2 as task_desc_pb2
 # import py_rl.py_firmament_grpc.whare_map_stats_pb2_grpc as whare_map_stats_pb2_grpc
 # import py_rl.py_firmament_grpc.whare_map_stats_pb2 as whare_map_stats_pb2
 
-import py_rl.py_server.logger as logger
+from py_rl.py_server.logger import Logger
 import py_rl.py_server.raw_info as raw_info
 import py_rl.py_server.simple_scheduler as simple_scheduler
+
+from concurrent import futures
+import time
+import logging
+import os
+import grpc
+from tensorboardX import SummaryWriter
 
 
 class FirmamentSchedulerServicer(firmament_scheduler_pb2_grpc.FirmamentSchedulerServicer):
@@ -166,11 +165,13 @@ class FirmamentSchedulerServicer(firmament_scheduler_pb2_grpc.FirmamentScheduler
     def AddTaskStats(self, request, context):
         """AddTaskStats sends task status to firmament server.
         """
+        global task_stat_epoch
         logger.log_task_stats(request)
         if request.task_id in pods_running.uid2raw.keys():
             raw_pod = pods_running.uid2raw[request.task_id]
             raw_pod.adjust_task_stats(request)
-            logger.brief_log_task_stats(raw_pod)
+            logger.brief_log_task_stats(raw_pod, writer, start_time, task_stat_epoch)
+            task_stat_epoch += 1
         return firmament_scheduler_pb2.TaskStatsResponse(type='TASK_SUBMITTED_OK')
 
     def AddNodeStats(self, request, context):
@@ -218,6 +219,13 @@ def serve():
 
 if __name__ == '__main__':
 
+    start_time = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime())
+    task_stat_epoch = 0
+
+    # use tensorboardX to record stats
+    writer = SummaryWriter("../../logs/board")
+
+    logger = Logger()
     _ONE_DAY_IN_SECONDS = 60 * 60 * 24
     LOG_FILE = "../../logs/alpha_log.log"
 
@@ -227,7 +235,6 @@ if __name__ == '__main__':
     with open(LOG_FILE, 'r+') as f:
         f.truncate()
     logging.info("Server started")
-    start_time = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime())
 
     # data structures
     nodes = raw_info.NodeDict()

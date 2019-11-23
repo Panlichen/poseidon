@@ -1,15 +1,14 @@
 import logging
 
 import numpy as np
-import py_rl.py_server.scheduler_interface as scheduler_interface
-import py_rl.py_server.raw_info as raw_info
+from py_rl.py_server.scheduler_interface import Scheduler
 import py_rl.py_firmament_grpc.scheduling_delta_pb2 as scheduling_delta_pb2
 
-class SimpleScheduler(scheduler_interface.Scheduler):
+class SimpleScheduler(Scheduler):
     def __init__(self):
-        self.pod_matrix = np.random.rand(scheduler_interface.Scheduler.out_tensor_len, scheduler_interface.Scheduler.pod_vector_len)
-        self.inner_pod_matrix = np.random.rand(scheduler_interface.Scheduler.out_tensor_len, scheduler_interface.Scheduler.pod_vector_len)
-        self.node_matrix = np.random.rand(scheduler_interface.Scheduler.out_tensor_len, scheduler_interface.Scheduler.node_vector_len)
+        self.pod_matrix = np.random.rand(Scheduler.out_tensor_len, Scheduler.pod_vector_len)
+        self.inner_pod_matrix = np.random.rand(Scheduler.out_tensor_len, Scheduler.pod_vector_len)
+        self.node_matrix = np.random.rand(Scheduler.out_tensor_len, Scheduler.node_vector_len)
 
     def calc_pod_tensor(self, pod_vector):
         pod_tensor = self.pod_matrix.dot(np.array(pod_vector))

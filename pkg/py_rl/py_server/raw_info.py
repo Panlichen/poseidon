@@ -1,6 +1,5 @@
 import logging
-import py_rl.py_server.scheduler_interface as scheduler_interface
-
+from  py_rl.py_server.scheduler_interface import Scheduler
 
 class PodDict:
     def __init__(self):
@@ -41,6 +40,10 @@ class NodeDict:
         return list(self.uuid2raw.values())
 
 
+def _hash(input_str):
+    return hash(input_str)
+
+
 class RawPodInfo:
     """
     [OK] MilliCPU-request
@@ -62,6 +65,16 @@ class RawPodInfo:
         # TODO: may need map between pod vector and its uid/name
         self.uid = request.task_descriptor.uid
         self.name = request.task_descriptor.name
+
+        # get "pure_name" from label
+        self.raw_pure_name = ""
+        labels = request.task_descriptor.labels
+        for i, label in enumerate(labels):
+            if label.key == "app-name":
+                self.raw_pure_name = label.value
+                break
+        self.pure_name = self.get_spread_pure_name()
+        # TODO: changes around pure_name in vec, and log
 
         self.raw_namespace = request.task_descriptor.namespace
         self.namespace = self.get_spread_ns()
@@ -105,7 +118,7 @@ class RawPodInfo:
         self.task_stat_net_tx_rate = ""
 
         # for vector
-        self.vec = [0] * scheduler_interface.Scheduler.pod_vector_len
+        self.vec = [0] * Scheduler.pod_vector_len
         self.vidx_label_start = 5
         self.vidx_stats_start = self.vidx_label_start + self.num_labels
 
@@ -137,9 +150,13 @@ class RawPodInfo:
 
         self.adjust_pod_stat_vec()
 
+    def get_spread_pure_name(self):
+        # TODO: complete get_spread_ns
+        return _hash(self.raw_pure_name)
+
     def get_spread_ns(self):
         # TODO: complete get_spread_ns
-        return hash(self.raw_namespace)
+        return _hash(self.raw_namespace)
 
     def get_spread_job_id(self):
         """
@@ -147,7 +164,7 @@ class RawPodInfo:
         :return:
         """
         # TODO: complete get_spread_job_id
-        return hash(self.raw_job_id)
+        return _hash(self.raw_job_id)
 
     def process_pod_label(self):
         """
@@ -167,13 +184,13 @@ class RawPodInfo:
                 break
             self.raw_label_str += "[LABEL {}] {} = {}; ".format(i, label.key, label.value)
             if label.key.find("INPUT") != -1:
-                labels[in_idx] = hash(label.value)
+                labels[in_idx] = _hash(label.value)
                 in_idx += 1
             elif label.key.find("OUTPUT") != -1:
-                labels[out_idx] = hash(label.value)
+                labels[out_idx] = _hash(label.value)
                 out_idx += 1
             else:
-                labels[common_idx] = hash(label.value)
+                labels[common_idx] = _hash(label.value)
                 common_idx += 1
 
         return labels
@@ -209,6 +226,7 @@ class RawPodInfo:
 
     def make_pod_vector(self):
         idx = 0
+        self.vec[idx] = self.pure_name; idx += 1
         self.vec[idx] = self.namespace; idx += 1
         self.vec[idx] = self.MilliCPU_request; idx += 1
         self.vec[idx] = self.mem_request; idx += 1
@@ -270,7 +288,7 @@ class RawNodeInfo:
         self.pods = PodDict()
 
         # for vector
-        self.vec = [0] * scheduler_interface.Scheduler.node_vector_len
+        self.vec = [0] * Scheduler.node_vector_len
         self.vidx_label_start = 4
         self.vidx_stat_start = self.vidx_label_start + self.num_labels
         self.make_node_vector()
@@ -313,7 +331,7 @@ class RawNodeInfo:
         for i, label in enumerate(self.request.resource_desc.labels):
             if i > self.num_labels:
                 logging.warning("Too many labels for node,Now only support 10")
-                labels[i] = hash(label.value)
+                labels[i] = _hash(label.value)
             self.raw_label_str += "[LABEL {}] {} = {}; ".format(i, label.key, label.value)
         return labels
 
